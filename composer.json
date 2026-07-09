@@ -1,0 +1,33 @@
+{
+	"name": "brosua/webmcp",
+	"type": "typo3-cms-extension",
+	"description": "WebMCP integration: exposes TYPO3 forms and content as in-browser AI-agent tools.",
+	"homepage": "https://typo3.org",
+	"license": ["GPL-2.0-or-later"],
+	"authors": [{
+		"name": "Josua Vogel",
+		"email": "j.vogel97@web.de",
+		"role": "Developer"
+	}],
+	"config": {
+		"sort-packages": true
+	},
+	"require": {
+		"typo3/cms-core": "^14.3",
+		"typo3/cms-frontend": "^14.3"
+	},
+	"autoload": {
+		"psr-4": {
+			"Brosua\\Webmcp\\": "Classes/"
+		}
+	},
+	"extra": {
+		"typo3/cms": {
+			"extension-key": "webmcp",
+			"version": "0.1.0",
+			"Package": {
+				"providesPackages": {}
+			}
+		}
+	}
+}
