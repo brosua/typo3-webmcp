@@ -34,7 +34,7 @@ use Psr\Http\Message\ServerRequestInterface;
 final class ModifyWebMcpConfigEvent
 {
     /**
-     * @param array<string, mixed> $config Serialized into #webmcp-config (debug, features, submitForms, ...)
+     * @param array<string, mixed> $config Serialized into #webmcp-config (features, ...)
      * @param list<string> $additionalModules EXT: paths to additional JS modules
      */
     public function __construct(

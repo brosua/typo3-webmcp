@@ -1,0 +1,7 @@
+# Register the WebMCP frontend Form template override via the official EXT:form
+# site setting. ConfigurationManager::applySiteSettingsOverrides() maps this to
+# prototypes.standard.formElementsDefinition.Form.renderingOptions.templateRootPaths[20],
+# so the root <form> can carry the declarative WebMCP tool attributes.
+form:
+  templates:
+    templateRootPath: 'EXT:webmcp/Resources/Private/Form/Frontend/Templates/'

@@ -1,0 +1,4 @@
+name: brosua/webmcp
+label: WebMCP
+dependencies:
+  - typo3/form

@@ -12,17 +12,12 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
-use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
-use TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationExtensionNotConfiguredException;
-use TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationPathDoesNotExistException;
 use TYPO3\CMS\Core\Http\NormalizedParams;
 use TYPO3\CMS\Core\Page\AssetCollector;
-use TYPO3\CMS\Core\SystemResource\Publishing\SystemResourcePublisherInterface;
-use TYPO3\CMS\Core\SystemResource\SystemResourceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Registers the client-side WebMCP bootstrap (module + JSON config + debug CSS)
+ * Registers the client-side WebMCP bootstrap (module + JSON config)
  * via the TYPO3 AssetCollector. The actual tool registration happens in the
  * browser via document.modelContext (see Resources/Public/JavaScript/webmcp.js).
  *
@@ -40,20 +35,15 @@ final class WebMcpInjectionMiddleware implements MiddlewareInterface, LoggerAwar
     public function __construct(
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly AssetCollector $assetCollector,
-        private readonly ExtensionConfiguration $extensionConfiguration,
-        private readonly SystemResourceFactory $systemResourceFactory,
-        private readonly SystemResourcePublisherInterface $resourcePublisher,
     ) {}
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $config = $this->resolveConfig();
-
         // WebMCP requires a secure context. Skip injection over plain HTTP unless
         // the host is a local development host (localhost/127.0.0.1/*.localhost).
         if ($this->isSecureContext($request)) {
             // Register before rendering so the PageRenderer picks the assets up.
-            $this->registerAssets($config, $request);
+            $this->registerAssets($request);
         }
 
         return $handler->handle($request);
@@ -78,39 +68,12 @@ final class WebMcpInjectionMiddleware implements MiddlewareInterface, LoggerAwar
             || str_ends_with($host, '.localhost');
     }
 
-    /**
-     * @return array{debug: bool, submitForms: bool}
-     */
-    private function resolveConfig(): array
-    {
-        return [
-            'debug' => $this->getBoolConfig('debug', false),
-            'submitForms' => $this->getBoolConfig('submitForms', false),
-        ];
-    }
-
-    private function getBoolConfig(string $path, bool $default): bool
-    {
-        try {
-            return (bool)$this->extensionConfiguration->get('webmcp', $path);
-        } catch (ExtensionConfigurationExtensionNotConfiguredException | ExtensionConfigurationPathDoesNotExistException) {
-            return $default;
-        }
-    }
-
-    /**
-     * @param array{debug: bool, submitForms: bool} $config
-     */
-    private function registerAssets(array $config, ServerRequestInterface $request): void
+    private function registerAssets(ServerRequestInterface $request): void
     {
         $clientConfig = [
-            'debug' => $config['debug'],
             'features' => [
-                'forms' => true,
                 'content' => true,
             ],
-            'submitForms' => $config['submitForms'],
-            'adaptersUrl' => $this->resolvePublicUri('EXT:webmcp/Resources/Public/JavaScript/forms/adapters.js', $request),
         ];
 
         // Let integrations tweak the client config and queue their own JS tool
@@ -138,12 +101,6 @@ final class WebMcpInjectionMiddleware implements MiddlewareInterface, LoggerAwar
         // json_encode already produces safe content for a JSON script block, but
         // guard the closing tag defensively.
         $jsonConfig = str_replace('</', '<\/', $jsonConfig);
-
-        // Debug/overlay stylesheet (always rendered in <head>).
-        $this->assetCollector->addStyleSheet(
-            'webmcp',
-            'EXT:webmcp/Resources/Public/Css/webmcp-debug.css'
-        );
 
         // Config as a JSON island in <head> (priority) so it is present in the
         // DOM before the deferred module executes and reads #webmcp-config.
@@ -174,19 +131,5 @@ final class WebMcpInjectionMiddleware implements MiddlewareInterface, LoggerAwar
                 ['type' => 'module']
             );
         }
-    }
-
-    /**
-     * Resolves an EXT: path to its published, cache-busted public URL using the
-     * same mechanism the AssetRenderer uses for script tags. The main module is
-     * cache-busted by the AssetCollector, but its static sub-imports (e.g.
-     * forms/adapters.js) are not, so integrators would otherwise receive a stale
-     * sub-module after an update. The resolved URL is handed to the client config
-     * and imported dynamically.
-     */
-    private function resolvePublicUri(string $extPath, ServerRequestInterface $request): string
-    {
-        $resource = $this->systemResourceFactory->createPublicResource($extPath);
-        return (string)$this->resourcePublisher->generateUri($resource, $request);
     }
 }

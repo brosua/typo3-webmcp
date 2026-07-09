@@ -1,0 +1,100 @@
+prototypes:
+  standard:
+    formElementsDefinition:
+      Form:
+        formEditor:
+          editors:
+            350:
+              identifier: webmcpToolName
+              templateName: Inspector-TextEditor
+              label: 'WebMCP: Tool name'
+              description: 'Exposes this form as an AI-agent tool. Leave empty to keep it hidden.'
+              propertyPath: renderingOptions.webmcp.toolname
+              doNotSetIfPropertyValueIsEmpty: true
+            360:
+              identifier: webmcpToolDescription
+              templateName: Inspector-TextEditor
+              label: 'WebMCP: Tool description'
+              description: 'What the tool does, shown to the agent.'
+              propertyPath: renderingOptions.webmcp.tooldescription
+              doNotSetIfPropertyValueIsEmpty: true
+            370:
+              identifier: webmcpAutosubmit
+              templateName: Inspector-CheckboxEditor
+              label: 'WebMCP: Allow the agent to submit the form'
+              propertyPath: renderingOptions.webmcp.autosubmit
+
+      Text:
+        formEditor:
+          editors:
+            232: &webmcpToolParamDescription
+              identifier: webmcpToolParamDescription
+              templateName: Inspector-TextEditor
+              label: 'WebMCP: Parameter description'
+              description: 'Explains this field to the AI agent (WebMCP).'
+              propertyPath: properties.fluidAdditionalAttributes.toolparamdescription
+              doNotSetIfPropertyValueIsEmpty: true
+      Textarea:
+        formEditor:
+          editors:
+            232: *webmcpToolParamDescription
+      Email:
+        formEditor:
+          editors:
+            232: *webmcpToolParamDescription
+      Telephone:
+        formEditor:
+          editors:
+            232: *webmcpToolParamDescription
+      Url:
+        formEditor:
+          editors:
+            232: *webmcpToolParamDescription
+      Number:
+        formEditor:
+          editors:
+            232: *webmcpToolParamDescription
+      Password:
+        formEditor:
+          editors:
+            232: *webmcpToolParamDescription
+      AdvancedPassword:
+        formEditor:
+          editors:
+            232: *webmcpToolParamDescription
+      Date:
+        formEditor:
+          editors:
+            232: *webmcpToolParamDescription
+      Checkbox:
+        formEditor:
+          editors:
+            232: *webmcpToolParamDescription
+      MultiCheckbox:
+        formEditor:
+          editors:
+            232: *webmcpToolParamDescription
+      RadioButton:
+        formEditor:
+          editors:
+            232: *webmcpToolParamDescription
+      SingleSelect:
+        formEditor:
+          editors:
+            232: *webmcpToolParamDescription
+      MultiSelect:
+        formEditor:
+          editors:
+            232: *webmcpToolParamDescription
+      CountrySelect:
+        formEditor:
+          editors:
+            232: *webmcpToolParamDescription
+      FileUpload:
+        formEditor:
+          editors:
+            232: *webmcpToolParamDescription
+      ImageUpload:
+        formEditor:
+          editors:
+            232: *webmcpToolParamDescription

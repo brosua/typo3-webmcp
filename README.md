@@ -1,14 +1,21 @@
 # WebMCP for TYPO3 (experimental PoC)
 
 Exposes TYPO3 frontend **forms** (EXT:form, Extbase `<f:form>` and any
-`<form data-webmcp>`) and **page content** as in-browser
+`<form toolname>`) and **page content** as in-browser
 [WebMCP](https://github.com/webmachinelearning/webmcp) tools via
 `document.modelContext`, so browser-based AI agents can discover and invoke them.
 
-> Status: experimental proof of concept. WebMCP is an early W3C proposal without
-> shipping browser support yet. This extension therefore installs a small shim
-> and a debug overlay so the tools can be inspected and executed **without** a
-> native browser agent.
+The client implements the WebMCP
+[declarative API](https://github.com/webmachinelearning/webmcp/blob/main/declarative-api-explainer.md)
+for forms **natively**: the extension renders the standard `toolname` /
+`tooldescription` / `toolparamdescription` / `toolautosubmit` attributes onto the
+`<form>` and its controls, and the browser's native WebMCP implementation turns
+them into tools. No JavaScript bridge is involved for forms.
+
+> Status: experimental proof of concept. This integration requires a native
+> WebMCP implementation (Chrome 149+): both the declarative form tools and the
+> read-only **content tools** are only exposed when the browser provides
+> `document.modelContext`. Without native support the module does nothing.
 
 ## How it works
 
@@ -18,33 +25,19 @@ emits them into the page (cache-busted URLs, deduplicated, CSP-nonce aware).
 Registration happens *before* the page is rendered, so cached pages are covered
 too. In the browser the module (`webmcp.js`):
 
-- installs a `document.modelContext` shim when no native implementation exists;
-- registers read-only **content tools** for the current page;
-- registers a **form tool** for every recognised `<form>`, deriving a JSON input
-  schema from the visible fields;
-- fires a `webmcp:ready` event so integrator scripts can register their own tools;
-- renders an optional **debug overlay** (bottom-right) listing all tools with a
-  "Run" button.
+- registers read-only **content tools** on the native `document.modelContext`
+  (and does nothing if the browser has no native WebMCP implementation);
+- fires a `webmcp:ready` event so integrator scripts can register their own tools.
 
-Assets are only injected in a **secure context**: over HTTPS, or on local
-development hosts (`localhost`, `127.0.0.1`, `[::1]`, `*.localhost`). Plain HTTP on
-any other host is skipped, because WebMCP requires a secure context.
+Declarative **form tools** are not handled by this module: the browser's native
+WebMCP implementation reads the `tool*` attributes that TYPO3 renders on the
+`<form>` (see below) and exposes them itself.
 
 ## Requirements
 
-- TYPO3 v14.3+ / v15 dev
-- `typo3/cms-frontend`
-- EXT:form is optional (suggested) — Extbase and declared forms work without it.
-
-## Configuration
-
-Extension configuration (Admin Tools › Settings › Extension Configuration, or
-`ext_conf_template.txt`):
-
-| Setting       | Default | Effect                                                                             |
-|---------------|---------|------------------------------------------------------------------------------------|
-| `debug`       | `0`     | Renders the on-page debug overlay listing all tools. Keep **off** in production.   |
-| `submitForms` | `0`     | Allows form tools to actually submit the underlying form after filling it. When off, forms are only **filled** for human review. |
+- TYPO3 v14.3+
+- A browser with a native WebMCP implementation (Chrome 149+) — required for
+  both form and content tools.
 
 ## Content tools
 
@@ -59,42 +52,83 @@ All content tools operate solely on the DOM of the current page and are read-onl
 
 ## Form tools
 
-Each recognised `<form>` gets one `form-{name}` tool. A form is matched by the
-first applicable adapter (specific before generic):
+A `<form>` becomes a tool when it carries the official `toolname` attribute; the
+browser's native WebMCP implementation builds the tool and its input schema from
+the form's controls. This extension's job is only to **render the declarative
+attributes** — on plain HTML forms you write them yourself, for EXT:form and
+Extbase forms the sections below show how to emit them.
 
-| Adapter    | Match                                                                       |
-|------------|-----------------------------------------------------------------------------|
-| `extform`  | a field named `tx_form_formframework…`                                       |
-| `extbase`  | a hidden `…[__trustedProperties]` field **or** a `tx_…[__referrer]` field   |
-| `declared` | the `<form>` carries a `data-webmcp` attribute                               |
-
-**Security invariant:** adapters only ever set values of **existing, visible**
-fields. Hidden/technical fields (`__*`, CSRF tokens, Extbase `__trustedProperties`
-and `__referrer`, honeypots, `type=hidden`/`password`/`file`) are never added to
-the schema and are submitted **unchanged** with the real form. This keeps all
-security tokens and Extbase property whitelisting intact.
+Because the native implementation drives the real form, hidden/technical fields
+(CSRF tokens, Extbase `__trustedProperties` / `__referrer`, honeypots) stay
+intact and are submitted unchanged.
 
 ### Extbase `<f:form>`
 
-Extbase forms are detected automatically via their `__trustedProperties` /
-`__referrer` fields — no markup changes needed. The adapter strips the
-`tx_<ext>_<plugin>` namespace prefix so the tool schema shows clean keys
-(`contact.name`, `contact.email`, …). The tool name is derived from
-`data-webmcp-name`, else a `<legend>`/heading inside the form, else the plugin
-namespace, else `form-N`.
-
-## Opt-in markup (non-EXT:form / non-Extbase forms)
-
-Any other `<form>` can be exposed by adding attributes:
+Add the declarative attributes via `additionalAttributes` on `<f:form>` and
+`toolparamdescription` on the fields:
 
 ```html
-<form data-webmcp
-      data-webmcp-name="newsletter"
-      data-webmcp-description="Subscribe to the newsletter">
+<f:form action="submit" name="contact" object="{contact}"
+        additionalAttributes="{'toolname': 'contact', 'tooldescription': 'Send us a message'}">
+    <f:form.textfield property="email"
+        additionalAttributes="{'toolparamdescription': 'Reply-to address'}" />
+</f:form>
 ```
 
-- `data-webmcp="off"` on a `<form>` **excludes** it from exposure.
-- `data-webmcp-ignore` on a single input **skips** that field.
+## Declarative API markup (non-EXT:form / non-Extbase forms)
+
+Any other `<form>` is exposed by adding the standard WebMCP declarative
+attributes. The control's `name` becomes the schema property and
+`toolparamdescription` its description:
+
+```html
+<form toolname="newsletter"
+      tooldescription="Subscribe to the newsletter"
+      toolautosubmit>
+  <input type="email" name="email"
+         toolparamdescription="The subscriber's e-mail address" required>
+  <button type="submit">Subscribe</button>
+</form>
+```
+
+- `toolname` (required) turns the form into a tool; `tooldescription` describes it.
+- `toolparamdescription` on a control supplies its property description.
+- `toolautosubmit` (boolean) lets the agent submit the form after filling it.
+  Without it, the tool only fills the form, focuses the submit button
+  (`:tool-submit-active`) and leaves submission to the user.
+
+## EXT:form
+
+Declare the tool on the **root form** with a `renderingOptions.webmcp`
+block, and describe fields with
+`properties.fluidAdditionalAttributes.toolparamdescription`:
+
+```yaml
+type: Form
+identifier: contact
+label: Contact
+prototypeName: standard
+renderingOptions:
+  webmcp:
+    toolname: contact
+    tooldescription: 'Send us a message'
+    autosubmit: false
+renderables:
+  - type: Page
+    identifier: page-1
+    renderables:
+      - type: Text
+        identifier: name
+        label: Name
+        properties:
+          fluidAdditionalAttributes:
+            toolparamdescription: 'Full name of the sender'
+```
+
+### Backend form editor
+
+The same settings are available as inspector fields in the backend form editor.
+
 
 ## Extension points
 
@@ -137,7 +171,7 @@ final class MyWebMcpTools
         $event->addModule('EXT:my_ext/Resources/Public/JavaScript/webmcp-tools.js');
 
         $config = $event->getConfig();
-        $config['features']['forms'] = false; // e.g. disable form tools on this page type
+        $config['features']['content'] = false; // e.g. disable content tools on this page type
         $event->setConfig($config);
     }
 }
@@ -147,6 +181,6 @@ final class MyWebMcpTools
 
 - Not a production feature; the client APIs (`getTools()`, `executeTool()`) mirror
   the WebMCP draft and may change.
-- Forms are **filled** but only **submitted** when `submitForms` is enabled;
-  submit-capable form tools are flagged with `destructiveHint` so an agent/overlay
-  can ask for confirmation. Multi-step forms are filled but never auto-advanced.
+- **A native WebMCP browser is required** (Chrome 149+). Without it neither the
+  form tools nor the content tools are exposed — the `tool*` attributes are still
+  rendered, but nothing registers them (there is no shim).

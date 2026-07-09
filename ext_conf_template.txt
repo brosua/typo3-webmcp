@@ -1,5 +1,0 @@
-# cat=basic; type=boolean; label=Show debug overlay: Renders a small on-page panel listing the registered tools so they can be inspected and run without a native browser agent. Keep disabled in production.
-debug = 0
-
-# cat=basic; type=boolean; label=Allow form submission: When enabled, form tools may submit the underlying form after filling it. Leave disabled so forms are only filled for human review.
-submitForms = 0
