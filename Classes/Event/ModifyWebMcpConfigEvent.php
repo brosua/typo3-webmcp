@@ -2,10 +2,6 @@
 
 declare(strict_types=1);
 
-/*
- * This file is part of the TYPO3 CMS project (experimental WebMCP PoC).
- */
-
 namespace Brosua\Webmcp\Event;
 
 use Psr\Http\Message\ServerRequestInterface;
