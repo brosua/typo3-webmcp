@@ -1,71 +1,52 @@
 # WebMCP for TYPO3 (experimental PoC)
 
+[![TYPO3 14](https://img.shields.io/badge/TYPO3-14-orange.svg?style=flat-square&logo=typo3)](https://get.typo3.org/14)
+[![Latest Stable Version](https://img.shields.io/packagist/v/brosua/webmcp?style=flat-square)](https://packagist.org/packages/brosua/webmcp)
+[![License](https://img.shields.io/packagist/l/brosua/webmcp?style=flat-square)](https://packagist.org/packages/brosua/webmcp)
+[![TER](https://img.shields.io/badge/TER-typo3__webmcp-green?style=flat-square)](https://extensions.typo3.org/extension/typo3_webmcp)
+
 Exposes TYPO3 frontend **forms** (EXT:form, Extbase `<f:form>` and any
 `<form toolname>`) and **page content** as in-browser
 [WebMCP](https://github.com/webmachinelearning/webmcp) tools via
 `document.modelContext`, so browser-based AI agents can discover and invoke them.
 
-The client implements the WebMCP
-[declarative API](https://github.com/webmachinelearning/webmcp/blob/main/declarative-api-explainer.md)
-for forms **natively**: the extension renders the standard `toolname` /
-`tooldescription` / `toolparamdescription` / `toolautosubmit` attributes onto the
-`<form>` and its controls, and the browser's native WebMCP implementation turns
-them into tools. No JavaScript bridge is involved for forms.
+> **Status:** experimental proof of concept. Requires a native WebMCP
+> implementation (Chrome 149+). Without native support the module does nothing.
 
-> Status: experimental proof of concept. This integration requires a native
-> WebMCP implementation (Chrome 149+): both the declarative form tools and the
-> read-only **content tools** are only exposed when the browser provides
-> `document.modelContext`. Without native support the module does nothing.
+## What the extension provides
 
-## How it works
-
-A frontend PSR-15 middleware (`WebMcpInjectionMiddleware`) registers a JS module
-plus a JSON config island with the TYPO3 **AssetCollector**, so the `PageRenderer`
-emits them into the page (cache-busted URLs, deduplicated, CSP-nonce aware).
-Registration happens *before* the page is rendered, so cached pages are covered
-too. In the browser the module (`webmcp.js`):
-
-- registers read-only **content tools** on the native `document.modelContext`
-  (and does nothing if the browser has no native WebMCP implementation);
-- fires a `webmcp:ready` event so integrator scripts can register their own tools.
-
-Declarative **form tools** are not handled by this module: the browser's native
-WebMCP implementation reads the `tool*` attributes that TYPO3 renders on the
-`<form>` (see below) and exposes them itself.
+| Component | Purpose |
+|---|---|
+| **Middleware** (`WebMcpInjectionMiddleware`) | Registers `webmcp.js` as ES module via TYPO3 AssetCollector |
+| **webmcp.js** | Registers read-only content tools on `document.modelContext` and fires `webmcp:ready` |
+| **ViewHelper** (`Form\ToolAttributesViewHelper`) | Builds declarative `tool*` attributes from `renderingOptions.webmcp` for EXT:form |
+| **Site Set** (`brosua/webmcp`) | Overrides the EXT:form frontend template so the `<form>` tag carries the declarative attributes |
+| **Form editor config** | Inspector fields for `toolname` / `tooldescription` in the backend form editor |
 
 ## Requirements
 
 - TYPO3 v14.3+
-- A browser with a native WebMCP implementation (Chrome 149+) — required for
-  both form and content tools.
+- A browser with a native WebMCP implementation (Chrome 149+)
 
 ## Content tools
 
-All content tools operate solely on the DOM of the current page and are read-only:
+Registered automatically on every page. All are read-only (DOM only):
 
-| Tool                | Input                   | Effect                                                          |
-|---------------------|-------------------------|----------------------------------------------------------------|
-| `page-get-summary`  | `{}`                    | Title, meta description, language, URL, heading outline        |
-| `page-find-text`    | `{ query: string }`     | Finds text, scrolls it into view and highlights it             |
-| `page-get-content`  | `{ selector?: string }` | Structured main content (paragraphs, lists, links) as JSON     |
-| `page-list-actions` | `{}`                    | Available forms / buttons / links with their tool names        |
+| Tool | Input | Effect |
+|---|---|---|
+| `page-get-summary` | `{}` | Title, meta description, language, URL, heading outline |
+| `page-find-text` | `{ query: string }` | Finds text, scrolls into view, highlights |
+| `page-get-content` | `{ selector?: string }` | Structured main content (paragraphs, lists, links) as JSON |
+| `page-list-actions` | `{}` | Available tools and primary navigation links |
 
-## Form tools
+## Form tools (declarative)
 
-A `<form>` becomes a tool when it carries the official `toolname` attribute; the
-browser's native WebMCP implementation builds the tool and its input schema from
-the form's controls. This extension's job is only to **render the declarative
-attributes** — on plain HTML forms you write them yourself, for EXT:form and
-Extbase forms the sections below show how to emit them.
-
-Because the native implementation drives the real form, hidden/technical fields
-(CSRF tokens, Extbase `__trustedProperties` / `__referrer`, honeypots) stay
-intact and are submitted unchanged.
+A `<form>` becomes a tool when it carries the `toolname` attribute. The
+browser's native WebMCP implementation builds the tool from the form's controls.
+This extension only **renders the declarative attributes** — the native
+implementation handles everything else.
 
 ### Extbase `<f:form>`
-
-Add the declarative attributes via `additionalAttributes` on `<f:form>` and
-`toolparamdescription` on the fields:
 
 ```html
 <f:form action="submit" name="contact" object="{contact}"
@@ -75,33 +56,7 @@ Add the declarative attributes via `additionalAttributes` on `<f:form>` and
 </f:form>
 ```
 
-## Declarative API markup (non-EXT:form / non-Extbase forms)
-
-Any other `<form>` is exposed by adding the standard WebMCP declarative
-attributes. The control's `name` becomes the schema property and
-`toolparamdescription` its description:
-
-```html
-<form toolname="newsletter"
-      tooldescription="Subscribe to the newsletter"
-      toolautosubmit>
-  <input type="email" name="email"
-         toolparamdescription="The subscriber's e-mail address" required>
-  <button type="submit">Subscribe</button>
-</form>
-```
-
-- `toolname` (required) turns the form into a tool; `tooldescription` describes it.
-- `toolparamdescription` on a control supplies its property description.
-- `toolautosubmit` (boolean) lets the agent submit the form after filling it.
-  Without it, the tool only fills the form, focuses the submit button
-  (`:tool-submit-active`) and leaves submission to the user.
-
-## EXT:form
-
-Declare the tool on the **root form** with a `renderingOptions.webmcp`
-block, and describe fields with
-`properties.fluidAdditionalAttributes.toolparamdescription`:
+### EXT:form (YAML)
 
 ```yaml
 type: Form
@@ -125,19 +80,25 @@ renderables:
             toolparamdescription: 'Full name of the sender'
 ```
 
-### Backend form editor
-
 The same settings are available as inspector fields in the backend form editor.
 
+### Plain HTML forms
 
-## Extension points
+```html
+<form toolname="newsletter"
+      tooldescription="Subscribe to the newsletter"
+      toolautosubmit>
+  <input type="email" name="email"
+         toolparamdescription="The subscriber's e-mail address" required>
+  <button type="submit">Subscribe</button>
+</form>
+```
 
-### JS: register your own tools
+## Extension point: register your own tools (JS)
 
-`webmcp.js` fires `webmcp:ready` once `document.modelContext` is available and the
-built-in tools are registered. The event detail (also stored on
-`document.__webmcpReadyDetail` for late-loading scripts) carries
-`{ modelContext, config, register }`:
+`webmcp.js` fires `webmcp:ready` once `document.modelContext` is available and
+the built-in tools are registered. The detail (also stored on
+`document.__webmcpReadyDetail`) carries `{ modelContext, register }`:
 
 ```js
 document.addEventListener('webmcp:ready', (e) => {
@@ -155,32 +116,8 @@ document.addEventListener('webmcp:ready', (e) => {
 });
 ```
 
-### PHP: `ModifyWebMcpConfigEvent` (PSR-14)
-
-Dispatched right before the `#webmcp-config` JSON is serialized. Listeners can
-tweak any config value per request/site/user and queue additional client-side JS
-tool modules (each an `EXT:` path, injected as `<script type="module">` right
-after the core module):
-
-```php
-final class MyWebMcpTools
-{
-    #[\TYPO3\CMS\Core\Attribute\AsEventListener('my-ext/webmcp')]
-    public function __invoke(\Brosua\Webmcp\Event\ModifyWebMcpConfigEvent $event): void
-    {
-        $event->addModule('EXT:my_ext/Resources/Public/JavaScript/webmcp-tools.js');
-
-        $config = $event->getConfig();
-        $config['features']['content'] = false; // e.g. disable content tools on this page type
-        $event->setConfig($config);
-    }
-}
-```
-
 ## Known limitations
 
-- Not a production feature; the client APIs (`getTools()`, `executeTool()`) mirror
-  the WebMCP draft and may change.
-- **A native WebMCP browser is required** (Chrome 149+). Without it neither the
-  form tools nor the content tools are exposed — the `tool*` attributes are still
-  rendered, but nothing registers them (there is no shim).
+- Not a production feature; APIs mirror the WebMCP draft and may change.
+- **A native WebMCP browser is required** (Chrome 149+). Without it the
+  `tool*` attributes are rendered but nothing registers them (no shim).
