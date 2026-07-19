@@ -23,7 +23,7 @@
 	},
 	"extra": {
 		"typo3/cms": {
-			"extension-key": "webmcp",
+			"extension-key": "typo3_webmcp",
 			"version": "0.1.0",
 			"Package": {
 				"providesPackages": {}

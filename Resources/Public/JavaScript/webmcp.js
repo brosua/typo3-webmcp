@@ -19,8 +19,6 @@
  *   https://github.com/webmachinelearning/webmcp/blob/main/declarative-api-explainer.md
  */
 
-const CONFIG = readConfig();
-
 const state = {
     /** @type {Array<{descriptor: object, exposedTo: (string|null)}>} */
     tools: [],
@@ -28,28 +26,13 @@ const state = {
 
 bootstrap();
 
-function readConfig() {
-    const el = document.getElementById('webmcp-config');
-    const fallback = { features: { content: false } };
-    if (!el) {
-        return fallback;
-    }
-    try {
-        return { ...fallback, ...JSON.parse(el.textContent || '{}') };
-    } catch {
-        return fallback;
-    }
-}
-
 function bootstrap() {
     // Native-only: without document.modelContext there is nothing to register.
     if (!document.modelContext) {
         return;
     }
 
-    if (CONFIG.features?.content) {
-        registerContentTools();
-    }
+    registerContentTools();
     announceReady();
 }
 
@@ -59,7 +42,7 @@ function bootstrap() {
  * that load later can pick it up without missing the event.
  */
 function announceReady() {
-    const detail = { modelContext: document.modelContext, config: CONFIG, register };
+    const detail = { modelContext: document.modelContext, register };
     document.__webmcpReadyDetail = detail;
     document.dispatchEvent(new CustomEvent('webmcp:ready', { detail }));
 }

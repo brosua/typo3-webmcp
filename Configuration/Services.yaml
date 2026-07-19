@@ -6,5 +6,3 @@ services:
 
   Brosua\Webmcp\:
     resource: '../Classes/*'
-    exclude:
-      - '../Classes/Event/*'
