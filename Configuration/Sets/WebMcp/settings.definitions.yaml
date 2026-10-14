@@ -1,0 +1,8 @@
+categories:
+  webmcp: ~
+
+settings:
+  webmcp.search.pageUid:
+    default: 0
+    type: page
+    category: webmcp

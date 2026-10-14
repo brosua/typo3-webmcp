@@ -8,8 +8,9 @@ use TYPO3\CMS\Form\Domain\Model\Renderable\RootRenderableInterface;
 use TYPO3Fluid\Fluid\Core\ViewHelper\AbstractViewHelper;
 
 /**
- * Builds the WebMCP declarative tool attributes (`toolname`, `tooldescription`,
- * `toolautosubmit`) for the root EXT:form `<form>` tag.
+ * Builds the WebMCP declarative tool attributes (`toolname`, `tooldescription`)
+ * for the root EXT:form `<form>` tag. `toolautosubmit` is never rendered: the
+ * visitor always submits the form.
  *
  * The root form element is a FormDefinition and does NOT support `properties` /
  * `fluidAdditionalAttributes` (FormDefinition::setOptions() only allows
@@ -22,15 +23,18 @@ use TYPO3Fluid\Fluid\Core\ViewHelper\AbstractViewHelper;
  *     webmcp:
  *       toolname: contact
  *       tooldescription: 'Send us a message'
- *       autosubmit: true
  */
 final class ToolAttributesViewHelper extends AbstractViewHelper
 {
+    // Browsers reject other tool names (WebMCP registerTool()).
+    private const TOOL_NAME_PATTERN = '/^[A-Za-z0-9_.-]{1,128}$/';
+
     protected $escapeOutput = false;
 
     public function initializeArguments(): void
     {
         $this->registerArgument('form', 'object', 'The form runtime (root renderable).', true);
+        $this->registerArgument('attributes', 'mixed', 'Attributes the core template renders on the form tag; the tool attributes are merged into them.', false, []);
     }
 
     /**
@@ -38,31 +42,28 @@ final class ToolAttributesViewHelper extends AbstractViewHelper
      */
     public function render(): array
     {
+        $attributes = is_array($this->arguments['attributes']) ? $this->arguments['attributes'] : [];
+
         $form = $this->arguments['form'];
         if (!$form instanceof RootRenderableInterface) {
-            return [];
+            return $attributes;
         }
 
         $webmcp = $form->getRenderingOptions()['webmcp'] ?? null;
         if (!is_array($webmcp)) {
-            return [];
+            return $attributes;
         }
 
         $toolName = trim((string)($webmcp['toolname'] ?? ''));
-        if ($toolName === '') {
-            return [];
+        if (!preg_match(self::TOOL_NAME_PATTERN, $toolName)) {
+            return $attributes;
         }
 
-        $attributes = ['toolname' => $toolName];
+        $attributes['toolname'] = $toolName;
 
         $description = trim((string)($webmcp['tooldescription'] ?? ''));
         if ($description !== '') {
             $attributes['tooldescription'] = $description;
-        }
-
-        if (!empty($webmcp['autosubmit'])) {
-            // Boolean attribute: any value makes hasAttribute('toolautosubmit') true.
-            $attributes['toolautosubmit'] = 'toolautosubmit';
         }
 
         return $attributes;

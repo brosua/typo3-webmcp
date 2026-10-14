@@ -25,9 +25,9 @@ jobs:
         id: version
         run: echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
-      - name: Set version in ext_emconf.php
+      - name: Set version in composer.json
         run: |
-          sed -i "s/'version' => '.*'/'version' => '${{ steps.version.outputs.value }}'/" ext_emconf.php
+          sed -i 's/"version": "[^"]*"/"version": "${{ steps.version.outputs.value }}"/' composer.json
 
       - name: Upload to TER
         uses: tomasnorre/typo3-upload-ter@v2
@@ -35,23 +35,11 @@ jobs:
           api-token: ${{ secrets.TYPO3_API_TOKEN }}
           php-version: "8.4"
 
-      - name: Extract changelog for this version
-        id: changelog
-        run: |
-          # Extract section between current version header and next version header
-          version="${{ steps.version.outputs.value }}"
-          changelog=$(awk "/^## \\[${version}\\]/{found=1; next} /^## \\[/{if(found) exit} found{print}" CHANGELOG.md)
-          # Use GitHub Actions multiline output
-          {
-            echo "body<<CHANGELOG_EOF"
-            echo "$changelog"
-            echo "CHANGELOG_EOF"
-          } >> "$GITHUB_OUTPUT"
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: v${{ steps.version.outputs.value }}
           body: ${{ steps.changelog.outputs.body }}
+          generate_release_notes: ${{ steps.changelog.outputs.body == '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

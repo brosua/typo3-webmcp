@@ -1,28 +1,34 @@
+name: brosua/webmcp-form
+label: 'WebMCP — Form tool attributes'
+priority: 100
+
 prototypes:
   standard:
+    formEditor:
+      translationFiles:
+        20: 'EXT:typo3_webmcp/Resources/Private/Language/FormEditor.xlf'
     formElementsDefinition:
       Form:
+        renderingOptions:
+          # Below the form.templates.templateRootPath site setting (20), so a site's own template wins.
+          templateRootPaths:
+            15: 'EXT:typo3_webmcp/Resources/Private/Form/Frontend/Templates/'
         formEditor:
           editors:
             350:
               identifier: webmcpToolName
               templateName: Inspector-TextEditor
-              label: 'WebMCP: Tool name'
-              description: 'Exposes this form as an AI-agent tool. Leave empty to keep it hidden.'
+              label: formEditor.elements.Form.editor.webmcpToolName.label
+              description: formEditor.elements.Form.editor.webmcpToolName.description
               propertyPath: renderingOptions.webmcp.toolname
               doNotSetIfPropertyValueIsEmpty: true
             360:
               identifier: webmcpToolDescription
               templateName: Inspector-TextEditor
-              label: 'WebMCP: Tool description'
-              description: 'What the tool does, shown to the agent.'
+              label: formEditor.elements.Form.editor.webmcpToolDescription.label
+              description: formEditor.elements.Form.editor.webmcpToolDescription.description
               propertyPath: renderingOptions.webmcp.tooldescription
               doNotSetIfPropertyValueIsEmpty: true
-            370:
-              identifier: webmcpAutosubmit
-              templateName: Inspector-CheckboxEditor
-              label: 'WebMCP: Allow the agent to submit the form'
-              propertyPath: renderingOptions.webmcp.autosubmit
 
       Text:
         formEditor:
@@ -30,8 +36,8 @@ prototypes:
             232: &webmcpToolParamDescription
               identifier: webmcpToolParamDescription
               templateName: Inspector-TextEditor
-              label: 'WebMCP: Parameter description'
-              description: 'Explains this field to the AI agent (WebMCP).'
+              label: formEditor.elements.FormElement.editor.webmcpToolParamDescription.label
+              description: formEditor.elements.FormElement.editor.webmcpToolParamDescription.description
               propertyPath: properties.fluidAdditionalAttributes.toolparamdescription
               doNotSetIfPropertyValueIsEmpty: true
       Textarea:
@@ -54,6 +60,14 @@ prototypes:
         formEditor:
           editors:
             232: *webmcpToolParamDescription
+      Date:
+        formEditor:
+          editors:
+            232: *webmcpToolParamDescription
+      DatePicker:
+        formEditor:
+          editors:
+            232: *webmcpToolParamDescription
       Password:
         formEditor:
           editors:
@@ -62,7 +76,11 @@ prototypes:
         formEditor:
           editors:
             232: *webmcpToolParamDescription
-      Date:
+      FileUpload:
+        formEditor:
+          editors:
+            232: *webmcpToolParamDescription
+      ImageUpload:
         formEditor:
           editors:
             232: *webmcpToolParamDescription
@@ -87,14 +105,6 @@ prototypes:
           editors:
             232: *webmcpToolParamDescription
       CountrySelect:
-        formEditor:
-          editors:
-            232: *webmcpToolParamDescription
-      FileUpload:
-        formEditor:
-          editors:
-            232: *webmcpToolParamDescription
-      ImageUpload:
         formEditor:
           editors:
             232: *webmcpToolParamDescription

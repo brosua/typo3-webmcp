@@ -1,0 +1,26 @@
+/* Follows the focus ring of the Camino theme; the fallbacks are Camino's values. */
+.webmcp-highlight {
+    outline: 2px solid var(--color-primary-100, #b45023);
+    outline-offset: 1px;
+    background-color: var(--color-warning-soft, #fff8d8);
+    transition: background-color 0.3s ease;
+}
+
+.webmcp-form-active {
+    outline: 2px solid var(--color-primary-100, #b45023);
+    outline-offset: 8px;
+}
+
+/* An unknown pseudo-class would invalidate a whole selector list, hence the guard. */
+@supports selector(:tool-form-active) {
+    form:tool-form-active {
+        outline: 2px solid var(--color-primary-100, #b45023);
+        outline-offset: 8px;
+    }
+
+    :tool-submit-active {
+        outline: 2px solid var(--color-primary-100, #b45023);
+        outline-offset: 2px;
+        background-color: var(--color-warning-soft, #fff8d8);
+    }
+}

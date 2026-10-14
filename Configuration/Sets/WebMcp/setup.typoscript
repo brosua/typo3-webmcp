@@ -1,0 +1,25 @@
+page {
+    includeCSS {
+        webmcp = EXT:typo3_webmcp/Resources/Public/Css/webmcp.css
+    }
+
+    includeJSFooter {
+        webmcp = EXT:typo3_webmcp/Resources/Public/JavaScript/webmcp.js
+        webmcp.type = module
+    }
+
+    headerData.31700 = COA
+    headerData.31700 {
+        if.isPositive = {$webmcp.search.pageUid}
+
+        10 = TEXT
+        10.typolink {
+            parameter = {$webmcp.search.pageUid}
+            returnLast = url
+            forceAbsoluteUrl = 1
+        }
+
+        stdWrap.htmlSpecialChars = 1
+        stdWrap.wrap = <meta name="webmcp-search" content="|">
+    }
+}

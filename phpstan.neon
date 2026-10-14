@@ -1,0 +1,11 @@
+parameters:
+  level: 8
+  paths:
+    - Classes
+    - Configuration
+  ignoreErrors:
+    -
+      # FormDataCompiler::compile() does not declare the Form\Exception its data providers throw.
+      identifier: catch.neverThrown
+      path: Classes/Controller/RecordFieldsController.php
+      count: 1

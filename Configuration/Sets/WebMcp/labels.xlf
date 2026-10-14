@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+  <file source-language="en" datatype="plaintext" original="EXT:typo3_webmcp/Configuration/Sets/WebMcp/labels.xlf" date="2026-10-09T00:00:00Z" product-name="webmcp">
+    <header/>
+    <body>
+      <trans-unit id="label">
+        <source>WebMCP</source>
+      </trans-unit>
+      <trans-unit id="categories.webmcp">
+        <source>WebMCP</source>
+      </trans-unit>
+      <trans-unit id="settings.webmcp.search.pageUid">
+        <source>Search page</source>
+      </trans-unit>
+      <trans-unit id="settings.description.webmcp.search.pageUid">
+        <source>Page with the indexed_search plugin. When set, AI agents get a "site-search" tool on every page of the site.</source>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

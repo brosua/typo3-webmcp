@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" version="1.2">
+  <file source-language="en" datatype="plaintext" original="EXT:typo3_webmcp/Resources/Private/Language/FormEditor.xlf" date="2026-10-09T00:00:00Z" product-name="webmcp">
+    <header/>
+    <body>
+      <trans-unit id="formEditor.elements.Form.editor.webmcpToolName.label">
+        <source>WebMCP: Tool name</source>
+      </trans-unit>
+      <trans-unit id="formEditor.elements.Form.editor.webmcpToolName.description">
+        <source>Exposes this form as an AI-agent tool. Leave empty to keep it hidden. Letters, digits, "_", "-" and "." only, at most 128 characters; other names are not rendered.</source>
+      </trans-unit>
+      <trans-unit id="formEditor.elements.Form.editor.webmcpToolDescription.label">
+        <source>WebMCP: Tool description</source>
+      </trans-unit>
+      <trans-unit id="formEditor.elements.Form.editor.webmcpToolDescription.description">
+        <source>What the tool does, shown to the agent.</source>
+      </trans-unit>
+      <trans-unit id="formEditor.elements.FormElement.editor.webmcpToolParamDescription.label">
+        <source>WebMCP: Parameter description</source>
+      </trans-unit>
+      <trans-unit id="formEditor.elements.FormElement.editor.webmcpToolParamDescription.description">
+        <source>Explains this field to the AI agent (WebMCP).</source>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
